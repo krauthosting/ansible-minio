@@ -1,0 +1,9 @@
+#!/bin/sh
+# copy latest HTTPS cert and key to $HOME/.minio
+cp "/etc/letsencrypt/live/{{ minio_server_dns }}/fullchain.pem" \
+  "/home/{{ minio_user }}/.minio/certs/public.crt"
+chown minio:minio "/home/{{ minio_user }}/.minio/certs/public.crt"
+cp "/etc/letsencrypt/live/{{ minio_server_dns }}/privkey.pem" \
+  "/home/{{ minio_user }}/.minio/certs/private.key"
+chown minio:minio "/home/{{ minio_user }}/.minio/certs/private.key"
+/bin/systemctl restart minio

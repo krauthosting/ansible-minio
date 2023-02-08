@@ -1,0 +1,59 @@
+- name: Generate HTTPS cert via certbot standalone
+  command: >
+    certbot --non-interactive certonly
+    --server https://acme-v02.api.letsencrypt.org/directory
+    --expand
+    -a standalone
+    --email {{ minio_letsencrypt_email }} --agree-tos
+    --cert-name {{ minio_server_dns }}
+    -d {{ minio_server_dns }}
+  args:
+    creates: "/etc/letsencrypt/live/{{ minio_server_dns }}/fullchain.pem"
+  register: minio_letsencrypt_cert_gen
+  when: lookup('community.general.dig', minio_server_dns, qtype='A') == ansible_default_ipv4.address
+
+- name: Stat generated HTTPS cert from certbot
+  stat:
+    path: "/etc/letsencrypt/live/{{ minio_server_dns }}/fullchain.pem"
+  register: minio_letsencrypt_cert_chk
+  changed_when: not minio_letsencrypt_cert_chk.stat.exists
+
+- name: Ensure certs dir in $HOME/.minio
+  file:
+    path: "/home/{{ minio_user }}/.minio/certs"
+    state: directory
+
+- name: Copy latest HTTPS cert and key to $HOME/.minio
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ minio_user }}"
+    group: "{{ minio_group }}"
+    remote_src: yes
+  loop_control:
+    label: "{{ item.src }}"
+  loop:
+    - src: "/etc/letsencrypt/live/{{ minio_server_dns }}/fullchain.pem"
+      dest: "/home/{{ minio_user }}/.minio/certs/public.crt"
+    - src: "/etc/letsencrypt/live/{{ minio_server_dns }}/privkey.pem"
+      dest: "/home/{{ minio_user }}/.minio/certs/private.key"
+  when: minio_letsencrypt_cert_chk.stat.exists
+
+- name: Renewal hook for certbot to copy cert and key
+  template:
+    src: certbot-renewal-hook_deploy.sh.j2
+    dest: "{{ minio_certbot_renewal_dir }}/minio"
+    mode: "+x"
+  when: minio_letsencrypt_cert_chk.stat.exists
+
+- name: Set addresses to domain and server port 443
+  set_fact:
+    minio_server_addr: "{{ minio_server_dns }}:443"
+    minio_server_port: 443
+    minio_console_addr: "{{ minio_server_dns }}:9001"
+  when: minio_letsencrypt_cert_chk.stat.exists
+
+- name: Append certs-dir to minio_server_opts
+  set_fact:
+    minio_server_opts: "{{ minio_server_opts | default('') + '--certs-dir /home/{{ minio_user }}/.minio/certs' }}"
+  when: minio_letsencrypt_cert_chk.stat.exists

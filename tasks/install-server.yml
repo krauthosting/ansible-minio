@@ -59,6 +59,9 @@
   delay: 2
   notify: restart minio
 
+- include_tasks: https.yml
+  when: minio_enable_ssl
+
 - name: Generate the MinIO server envfile
   template:
     src: minio.env.j2

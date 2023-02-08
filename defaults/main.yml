@@ -61,3 +61,4 @@ minio_install_client: true
 
 # TODO: in future
 minio_enable_ssl: false
+minio_certbot_renewal_dir: "/etc/letsencrypt/renewal-hooks/deploy"
