@@ -3,8 +3,7 @@
 
 - name: reload minio systemd
   systemd:
-    name: minio
-    daemon_reload: True
+    daemon_reload: yes
 
 - name: restart minio
   service:
