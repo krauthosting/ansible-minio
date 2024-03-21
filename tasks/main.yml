@@ -5,3 +5,5 @@
 
 - include_tasks: install-client.yml
   when: minio_install_client
+
+# TODO ensure root can use mc via localhost
