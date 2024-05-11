@@ -87,3 +87,6 @@
     enabled: true
     state: started
   notify: Check MinIO WebUI
+
+- name: Manage admins and users
+  include_tasks: users.yml

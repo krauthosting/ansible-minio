@@ -1,0 +1,16 @@
+---
+- name: change root username in /etc/default/mino
+  lineinfile:
+    path: "/etc/default/minio"
+    regexp: "MINIO_ROOT_USER="
+    line: 'MINIO_ROOT_USER="{{ minio_root_user }}"'
+  notify: restart minio
+  when: minio_root_user is defined and minio_root_user
+
+- name: change root password in /etc/default/mino
+  lineinfile:
+    path: "/etc/default/minio"
+    regexp: "MINIO_ROOT_PASSWORD="
+    line: 'MINIO_ROOT_PASSWORD="{{ minio_root_password }}"'
+  notify: restart minio
+  when: minio_root_password is defined and minio_root_password
